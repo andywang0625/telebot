@@ -136,7 +136,7 @@ def whoiam(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="@"+update.message.from_user.username)
 def music(bot, update):
     logger.info('Command Invoked: %s', 'music', extra={'target':update.message.from_user.username})
-    bot.sendVoice(chat_id=update.message.chat_id, voice=open("C:/Users/andy_/Downloads/test.mp3",'rb'))
+    bot.sendVoice(chat_id=update.message.chat_id, voice=open("test.mp3",'rb'))
 
 def cancelk(bot, update):
     #update.message.reply_text('cancelling')
