@@ -9,9 +9,12 @@ import threading
 from telegram import InlineQueryResultArticle, ParseMode, InputTextMessageContent
 from uuid import uuid4
 from telegram.utils.helpers import escape_markdown
-updater = Updater("519012714:AAEzzClTyBV8Q3GwRZAxlJslM3mxanpcoWM")
+import json
+import logging
 
-dp=updater.dispatcher
+FORMAT = '%(asctime)-15s - %(levelname)s - %(target)-s - %(message)s'
+logging.basicConfig(format=FORMAT, level=logging.INFO)
+logger = logging.getLogger('telebot')
 
 TITLE, MINPRICE, MAXPRICE = range(3)
 
@@ -30,8 +33,11 @@ class kijijianThread (threading.Thread):
         self.list = []
         self.working=True
     def run(self):
-        print("LOG==="+"Starting "+str(self.chat) +"'s thread, and Id is "+ str(self.threadID))
-        self.kijijianMain()
+        try:
+            logger.info('Service Info: %s', "Starting "+str(self.chat) +"'s thread, and Id is "+ str(self.threadID), extra={'target':self.update.message.from_user.username})
+            self.kijijianMain()
+        except:
+            logger.error('Service Info: %s', 'kijijian Failed to start', extra={'target':self.update.message.from_user.username})
     def kijijianMain(self):
         while self.working:
             response=requests.get(self.url,self.header)
@@ -58,34 +64,21 @@ class kijijianThread (threading.Thread):
                             self.list.append(productDescription)
                             self.update.message.reply_text(productTitle+"\n"+"仅仅只卖:"+str(productPrice)+"\n"+"详情:"+productDescription+"\n"+"在"+productDate+"发售的"+"\n"+"点击查看:"+"https://www.kijiji.ca"+productUrl)
                         else:
+                            logger.info('Service Info: %s', productTitle+" is Out of Date", extra={'target':self.update.message.from_user.username})
                             print(productTitle+" is out of date.\n")
                 except:
-                    print("LOG==="+str(self.threadID)+"这他妈的是个广告")
+                    logger.error('Service Info: %s', 'kijijian', extra={'target':self.update.message.from_user.username})
             time.sleep(1800)
             #sleepRefresh(5)
-        print("LOG==="+str(self.threadID)+" Thread of Kijijian has been killed clearly!")
+        logger.info('Thread Stoped: %s', 'Thread of Kijijian has been killed clearly!', extra={'target':self.update.message.from_user.username})
         return
 
 def url_maker():
     url="https://www.kijiji.ca/b-buy-sell/ottawa/"+keyword+"/k0c10l1700185?price="+minPrice+"__"+maxPrice
     return url
 
-def sleepRefresh(sec):
-    secc=sec;
-    print("Refresh in "+str(sec)+" seconds")
-    for i in range(101):
-        sys.stdout.write('\r')
-        sys.stdout.write("%s%% |%s" %(int(i%101), int(i%101)*'#'))
-        sys.stdout.flush()  ##随时刷新到屏幕上
-        time.sleep(5)
-    print ("\n")
-
-
-
-
-
-
 def kijijianStart(bot, update):
+    logger.info('Command Invoked: %s', "kijijian", extra={'target':self.update.message.from_user.username})
     for theThread in threads:
         if theThread.chat == update.message.chat_id:
             update.message.reply_text('You can only run one kijiji helper!')
@@ -129,9 +122,9 @@ def kijijianMaxPrice(bot, update):
                 thisThread.start()
                 threads.append(thisThread)
             except:
-                print("LOG==="+"Start Thread Failed")
+                logger.error('Command Failed: %s', 'kijijian Failed to Start -> '+str(theThread.threadID), extra={'target':update.message.from_user.username})
     except Exception as e:
-        print("LOG==="+e)
+        logger.error('Command Failed: %s', 'kijijian Failed to Start -> '+str(e.message), extra={'target':update.message.from_user.username})
     #args=(url,headers,bot,update,))
     return ConversationHandler.END
 
@@ -139,31 +132,31 @@ def start(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="Hi")
 
 def whoiam(bot, update):
-    print("LOG==="+"whoiam")
-    bot.send_message(chat_id=update.message.chat_id, text=update.message.from_user.username)
-    open(update.message.from_user.photo)
-    bot.send_photo(update.message.chat_id, update.message.from_user.photo)
-
+    logger.info('Command Invoked: %s', 'whoiam', extra={'target':update.message.from_user.username})
+    bot.send_message(chat_id=update.message.chat_id, text="@"+update.message.from_user.username)
 def music(bot, update):
-    print("LOG==="+"music")
+    logger.info('Command Invoked: %s', 'music', extra={'target':update.message.from_user.username})
     bot.sendVoice(chat_id=update.message.chat_id, voice=open("C:/Users/andy_/Downloads/test.mp3",'rb'))
 
 def cancelk(bot, update):
     #update.message.reply_text('cancelling')
+    logger.info('Command Invoked: %s', 'cancelk', extra={'target':update.message.from_user.username})
     for theThread in threads:
         if theThread.chat == update.message.chat_id:
             try:
                 theThread.working=False
                 threads.remove(theThread)
                 bot.send_message(chat_id=update.message.chat_id, text="Kijijian is nolonger running!")
+                logger.info('Service Stoped: %s', 'cancelk -> '+str(theThread.threadID), extra={'target':update.message.from_user.username})
                 return ConversationHandler.END
             except:
-                print("LOG==="+"Failed to stop")
+                logger.error('Command Failed: %s', 'cancelk is not able to stop the thread -> '+str(theThread.threadID), extra={'target':update.message.from_user.username})
     update.message.reply_text('Kijijian is not running!')
     return ConversationHandler.END
 
 def cancel(bot, update):
     #print("Ready to cancel")
+    logger.info('Command Invoked: %s', 'cancel', extra={'target':update.message.from_user.username})
     reply_keyboard = [['Kijijian','Others']]
     update.message.reply_text("Which service(s) you hope to stop?", reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
     return POSTCANCEL
@@ -177,18 +170,20 @@ def postCancel(bot, update):
     return ConversationHandler.END
 
 
-
-
-#def inlinequery(bot, update):
-#    """Handle the inline query."""
-#    query = update.inline_query.query
-#    results = [
-#        InlineQueryResultArticle(
-#            id=uuid4(),
-#            title="Quo",
-#            input_message_content=InputTextMessageContent("\""+query.upper()+"\""))]
-#    update.inline_query.answer(results)
-#
+try:
+    with open('MyApi.json', 'r') as json_file:
+        data = json.load(json_file)
+except:
+    logger.critical('Config problem: %s', 'Not Able to Read MyApi.json', extra={'target': 'server'})
+    exit()
+try:
+    updater = Updater(data['api'])
+    dp = updater.dispatcher
+    logger.info('Loding Config file: %s', 'success', extra={'target':'server'})
+except:
+    logger.critical('Config problem: %s','Failed to use the API', extra={'target':'server'})
+    exit()
+logger.info('Setting up Telebot: %s','success', extra={'target':'server'})
 start_handler = CommandHandler('start', start)
 whoiam_handler = CommandHandler('whoiam', whoiam)
 music_handler = CommandHandler('music', music)
