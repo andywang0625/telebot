@@ -48,8 +48,9 @@ class kijijianThread (threading.Thread):
                             self.list.append(productDescription)
                             self.update.message.reply_text(productTitle+"\n"+"仅仅只卖:"+str(productPrice)+"\n"+"详情:"+productDescription+"\n"+"在"+productDate+"发售的"+"\n"+"点击查看:"+"https://www.kijiji.ca"+productUrl)
                         else:
-                            self.logger.info('Service Info: %s', productTitle+" is Out of Date", extra={'target':self.update.message.from_user.username})
-                            print(productTitle+" is out of date.\n")
+                            pass
+                            #self.logger.info('Service Info: %s', productTitle+" is Out of Date", extra={'target':self.update.message.from_user.username})
+                            #print(productTitle+" is out of date.\n")
                 except Exception as inst:
                     self.logger.error('Service Info: %s', 'kijijian:'+inst[0], extra={'target':self.update.message.from_user.username})
             time.sleep(1800)
